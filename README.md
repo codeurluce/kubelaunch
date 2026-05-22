@@ -169,4 +169,4 @@ KubeLaunch is currently in active development and aims to improve the Kubernetes
 
 ## 📄 License
 
-Apache 2.0
+This project is licensed under the Apache 2.0 License.

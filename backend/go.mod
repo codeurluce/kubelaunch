@@ -1,4 +1,4 @@
-module github.com/codeurluce/kubelaunch
+module github.com/codeurluce/kubelaunch/backend
 
 go 1.26.3
 

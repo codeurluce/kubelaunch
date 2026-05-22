@@ -5,6 +5,11 @@ export type StackType =
   | "python"
   | "go"
   | "docker"
+  | "static"
+  | "php"
+  | "ruby"
+  | "java"
+  | "rust"
   | "unknown";
 
 export type AppStatus = "running" | "pending" | "error" | "stopped";

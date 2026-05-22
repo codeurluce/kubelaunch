@@ -83,14 +83,20 @@ export const MOCK_LOGS: LogEntry[] = [
   { time: "10:42:40.223", level: "DEBUG", message: "Cache miss for key: user:42:profile" },
 ];
 
-export const STACK_CONFIG: Record<StackType, { label: string; color: string; bg: string; files: string[] }> = {
-  nodejs: { label: "Node.js", color: "#4ade80", bg: "#052e16", files: ["package.json"] },
-  nextjs: { label: "Next.js", color: "#22d3ee", bg: "#083344", files: ["package.json", "next.config.js"] },
-  "react-vite": { label: "React + Vite", color: "#a78bfa", bg: "#2e1065", files: ["package.json", "vite.config.ts"] },
-  python: { label: "Python", color: "#fbbf24", bg: "#451a03", files: ["requirements.txt"] },
-  go: { label: "Go", color: "#60a5fa", bg: "#1e3a5f", files: ["go.mod"] },
-  docker: { label: "Docker", color: "#60a5fa", bg: "#1e3a5f", files: ["Dockerfile"] },
-  unknown: { label: "Unknown", color: "#94a3b8", bg: "#1e293b", files: [] },
+export const STACK_CONFIG: Record<string, { label: string; color: string; bg: string; files: string[] }> = {
+  // ✅ Détection réussie — toujours vert
+  nodejs:       { label: "Node.js",         color: "#4ade80", bg: "#052e16", files: ["package.json"] },
+  nextjs:       { label: "Next.js",         color: "#4ade80", bg: "#052e16", files: ["package.json", "next.config.js"] },
+  "react-vite": { label: "React + Vite",    color: "#4ade80", bg: "#052e16", files: ["package.json", "vite.config.ts"] },
+  python:       { label: "Python",          color: "#4ade80", bg: "#052e16", files: ["requirements.txt"] },
+  go:           { label: "Go",              color: "#4ade80", bg: "#052e16", files: ["go.mod"] },
+  docker:       { label: "Docker",          color: "#4ade80", bg: "#052e16", files: ["Dockerfile"] },
+  static:       { label: "Static Site",     color: "#4ade80", bg: "#052e16", files: ["index.html"] },
+  php:          { label: "PHP",             color: "#4ade80", bg: "#052e16", files: ["composer.json"] },
+  ruby:         { label: "Ruby",            color: "#4ade80", bg: "#052e16", files: ["Gemfile"] },
+  java:         { label: "Java",            color: "#4ade80", bg: "#052e16", files: ["pom.xml"] },
+  rust:         { label: "Rust",            color: "#4ade80", bg: "#052e16", files: ["Cargo.toml"] },
+  unknown:      { label: "Unknown",         color: "#94a3b8", bg: "#1e293b", files: [] },
 };
 
 export function detectStackFromUrl(url: string): DetectResult {

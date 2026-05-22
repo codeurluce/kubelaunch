@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+// Ignore missing module/type declarations for CSS imports in this file
+// (project may declare these types elsewhere or via a global d.ts)
+// @ts-ignore
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" translate="no" suppressHydrationWarning>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );
