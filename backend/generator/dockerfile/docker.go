@@ -1,33 +1,24 @@
 package dockerfile
 
-import "github.com/codeurluce/kubelaunch/backend/core/analyzer"
+func Generate(input Input) string {
+	switch input.Framework {
 
-func GenerateDockerfile(runtime analyzer.Runtime) string {
+	case "nextjs":
+		return NextJS(input)
 
-	switch runtime {
+	case "nestjs":
+		return NestJS(input)
 
-	case analyzer.Node:
-		return `FROM node:20-alpine
-WORKDIR /app
-COPY . .
-RUN npm install
-CMD ["npm","start"]`
+	case "flask":
+		return Flask(input)
 
-	case analyzer.Python:
-		return `FROM python:3.12-alpine
-WORKDIR /app
-COPY . .
-RUN pip install -r requirements.txt
-CMD ["uvicorn","main:app","--host","0.0.0.0","--port","8000"]`
+	case "fastapi":
+		return FastAPI(input)
 
-	case analyzer.Go:
-		return `FROM golang:1.21
-WORKDIR /app
-COPY . .
-RUN go build -o app
-CMD ["./app"]`
+	case "laravel":
+		return Laravel(input)
 
 	default:
-		return `FROM alpine:latest`
+		return GenericNode(input)
 	}
 }
