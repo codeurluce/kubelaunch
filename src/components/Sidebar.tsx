@@ -9,16 +9,16 @@ import { cn } from "@/lib/data";
 
 const NAV_ITEMS = [
   { section: "Main", items: [
-    { icon: LayoutDashboard, label: "Overview", id: "overview" },
     { icon: Rocket, label: "Deploy", id: "deploy", badge: "new" },
+    { icon: LayoutDashboard, label: "Overview", id: "overview" },
     { icon: AppWindow, label: "Applications", id: "apps", badge: "5" },
   ]},
   { section: "Observability", items: [
     { icon: Terminal, label: "Logs", id: "logs" },
-    { icon: Activity, label: "Metrics", id: "metrics" },
+    // { icon: Activity, label: "Metrics", id: "metrics" },
   ]},
   { section: "Config", items: [
-    { icon: Key, label: "Env Vars", id: "envvars" },
+    // { icon: Key, label: "Env Vars", id: "envvars" },
     { icon: Settings, label: "Settings", id: "settings" },
   ]},
 ];

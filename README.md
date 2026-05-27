@@ -1,6 +1,6 @@
 # ☸ KubeLaunch
 
-> Deploy applications to Kubernetes in minutes — without writing YAML.
+> Deploy applications to Kubernetes in minutes — without writing Kubernetes YAML.
 
 KubeLaunch is an open-source developer platform that simplifies Kubernetes deployments for application developers.
 

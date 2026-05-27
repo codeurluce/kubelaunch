@@ -13,13 +13,13 @@ const PAGE_TITLES: Record<string, string> = {
   deploy: "Deploy",
   apps: "Applications",
   logs: "Logs",
-  metrics: "Metrics",
-  envvars: "Env Vars",
+  // metrics: "Metrics",
+  // envvars: "Env Vars",
   settings: "Settings",
 };
 
 export default function Home() {
-  const [activeNav, setActiveNav] = useState("overview");
+  const [activeNav, setActiveNav] = useState("deploy");
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
 
   const running = MOCK_APPS.filter((a) => a.status === "running").length;
