@@ -40,14 +40,18 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	// =========================
 	// 3. ANALYZE PROJECT
 	// =========================
-	files := scanFiles(repoPath)
-	// fmt.Println("FILES FOUND:")
-	// for _, f := range files {
-	// 	fmt.Println("-", f)
-	// }
+	runtime := string(req.Stack)
 
-	runtime := analyzer.DetectRuntime(files)
-	port := analyzer.DetectPort(runtime)
+	if runtime == "" {
+		return models.DeployResponse{}, fmt.Errorf("missing stack")
+	}
+
+	port := int(req.Port)
+
+	if port == 0 {
+		port = analyzer.DetectPort(runtime)
+	}
+
 	entry := analyzer.DetectEntrypoint(runtime)
 
 	fmt.Println("=================================")
