@@ -7,22 +7,31 @@ import (
 )
 
 func GenerateService(spec models.DeploymentSpec) string {
+
 	return fmt.Sprintf(`
 apiVersion: v1
 kind: Service
+
 metadata:
   name: %s-service
+  namespace: %s
+
 spec:
+  type: %s
+
   selector:
     app: %s
+
   ports:
     - protocol: TCP
-      port: 80
+      port: %d
       targetPort: %d
-  type: ClusterIP
 `,
 		spec.Name,
+		spec.Namespace,
+		spec.ServiceType,
 		spec.Name,
+		spec.Port,
 		spec.Port,
 	)
 }

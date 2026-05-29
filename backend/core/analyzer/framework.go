@@ -1,12 +1,17 @@
 package analyzer
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 func DetectFramework(files []string) string {
 
 	has := func(name string) bool {
 		for _, f := range files {
-			if strings.EqualFold(f, name) {
+			base := strings.ToLower(filepath.Base(f))
+
+			if base == strings.ToLower(name) {
 				return true
 			}
 		}

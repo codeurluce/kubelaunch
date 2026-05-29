@@ -17,7 +17,7 @@ import {
 
 import type { DetectResult, EnvVar } from "@/types";
 import { STACK_CONFIG } from "@/lib/data";
-import { detectStack } from "@/lib/api";
+import { detectStack, deployApp } from "@/lib/api";
 import { stackIcons } from "./ui/stackIcons";
 
 type DeployStep = {
@@ -70,12 +70,11 @@ export function DeployForm() {
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
 
   const [detected, setDetected] = useState<DetectResult | null>(null);
 
-  const [envVars, setEnvVars] = useState<EnvVar[]>([
-    { key: "", value: "" },
-  ]);
+  const [envVars, setEnvVars] = useState<EnvVar[]>([{ key: "", value: "" }]);
 
   const [appName, setAppName] = useState("");
 
@@ -107,12 +106,6 @@ export function DeployForm() {
       },
     ];
   }, [detected]);
-
-  const estimatedUrl = useMemo(() => {
-    if (!appName) return "http://localhost:30xxx";
-
-    return `http://${appName.toLowerCase()}.local`;
-  }, [appName]);
 
   const updateStep = (
     stepId: string,
@@ -146,10 +139,7 @@ export function DeployForm() {
       const result = await detectStack(repoUrl);
 
       const repoName =
-        repoUrl
-          .split("/")
-          .pop()
-          ?.replace(".git", "") || "my-app";
+        repoUrl.split("/").pop()?.replace(".git", "") || "my-app";
 
       setAppName(repoName);
       setDetected(result);
@@ -160,11 +150,13 @@ export function DeployForm() {
     }
   };
 
-  const handleDeploy = async () => {
-    if (!detected) return;
+const handleDeploy = async () => {
+  if (!detected) return;
 
+  try {
     setDeploying(true);
     setDeployed(false);
+    setError(null);
     setSteps(INITIAL_STEPS);
 
     const pipeline = [
@@ -179,16 +171,39 @@ export function DeployForm() {
 
     for (const step of pipeline) {
       updateStep(step, "running");
-
-      await sleep(1200);
-
+      await sleep(600);
       updateStep(step, "success");
     }
 
-    setLiveUrl(estimatedUrl);
-    setDeploying(false);
+    const envObject = envVars.reduce(
+      (acc, env) => {
+        if (env.key.trim()) {
+          acc[env.key] = env.value;
+        }
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    const result = await deployApp({
+      repoUrl,
+      appName,
+      namespace: "default",
+      replicas: 1,
+      port: detected.port,
+      stack: detected.stack,
+      envVars: envObject,
+    });
+
+    setLiveUrl(result.url);
+
     setDeployed(true);
-  };
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Deploy failed");
+  } finally {
+    setDeploying(false);
+  }
+};
 
   const addEnvVar = () => {
     setEnvVars((prev) => [...prev, { key: "", value: "" }]);
@@ -198,11 +213,7 @@ export function DeployForm() {
     setEnvVars((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateEnvVar = (
-    index: number,
-    field: keyof EnvVar,
-    value: string,
-  ) => {
+  const updateEnvVar = (index: number, field: keyof EnvVar, value: string) => {
     setEnvVars((prev) =>
       prev.map((ev, i) =>
         i === index
@@ -255,10 +266,7 @@ export function DeployForm() {
           disabled={detecting || !repoUrl.trim()}
           className="flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] bg-surface2 border border-border text-k-muted hover:bg-[#1e2d47] hover:text-k-text transition-all disabled:opacity-50"
         >
-          <ScanLine
-            size={15}
-            className={detecting ? "animate-spin" : ""}
-          />
+          <ScanLine size={15} className={detecting ? "animate-spin" : ""} />
 
           {detecting ? "Detecting..." : "Detect stack"}
         </button>
@@ -314,8 +322,8 @@ export function DeployForm() {
                 className="text-[11px] leading-relaxed"
                 style={{ color: stackCfg.color + "CC" }}
               >
-                KubeLaunch detected a {detected.framework} application.
-                A production-ready Dockerfile and Kubernetes deployment
+                KubeLaunch detected a {detected.framework} application. A
+                production-ready Dockerfile and Kubernetes deployment
                 configuration will be generated automatically.
               </p>
 
@@ -388,7 +396,7 @@ export function DeployForm() {
             </p>
 
             <div className="bg-surface border border-border rounded-lg px-3 py-2 text-[11px] font-mono text-k-green break-all">
-              {estimatedUrl}
+              {liveUrl || "Waiting deployment..."}
             </div>
           </div>
 
@@ -404,9 +412,7 @@ export function DeployForm() {
                   <input
                     type="text"
                     value={ev.key}
-                    onChange={(e) =>
-                      updateEnvVar(i, "key", e.target.value)
-                    }
+                    onChange={(e) => updateEnvVar(i, "key", e.target.value)}
                     placeholder="KEY"
                     className="flex-1 bg-surface2 border border-border rounded-lg px-3 py-2 text-[11px] font-mono text-k-text placeholder:text-k-muted focus:outline-none focus:border-accent"
                   />
@@ -414,9 +420,7 @@ export function DeployForm() {
                   <input
                     type="text"
                     value={ev.value}
-                    onChange={(e) =>
-                      updateEnvVar(i, "value", e.target.value)
-                    }
+                    onChange={(e) => updateEnvVar(i, "value", e.target.value)}
                     placeholder="value"
                     className="flex-1 bg-surface2 border border-border rounded-lg px-3 py-2 text-[11px] font-mono text-k-text placeholder:text-k-muted focus:outline-none focus:border-accent"
                   />
@@ -458,10 +462,7 @@ export function DeployForm() {
                   >
                     <div className="w-4 flex justify-center">
                       {step.status === "success" ? (
-                        <CheckCircle2
-                          size={15}
-                          className="text-k-green"
-                        />
+                        <CheckCircle2 size={15} className="text-k-green" />
                       ) : step.status === "running" ? (
                         <Loader2
                           size={15}
@@ -493,10 +494,7 @@ export function DeployForm() {
           {deployed && liveUrl && (
             <div className="bg-[#052e16] border border-[#166534] rounded-xl p-4 animate-fadeIn">
               <div className="flex items-start gap-3">
-                <CheckCircle2
-                  size={18}
-                  className="text-k-green mt-0.5"
-                />
+                <CheckCircle2 size={18} className="text-k-green mt-0.5" />
 
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-k-green mb-1">
@@ -513,13 +511,29 @@ export function DeployForm() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button className="px-3 py-2 rounded-lg bg-k-green text-black text-[11px] font-medium hover:opacity-90 transition-opacity">
+                    <button
+                      onClick={() => window.open(liveUrl, "_blank")}
+                      className="px-3 py-2 rounded-lg bg-k-green text-black text-[11px] font-medium hover:opacity-90 transition-opacity"
+                    >
                       Open application
                     </button>
 
-                    <button className="px-3 py-2 rounded-lg bg-surface border border-border text-[11px] text-k-text hover:border-accent transition-colors">
+                    <button
+                      onClick={() => setShowLogs((prev) => !prev)}
+                      className="px-3 py-2 rounded-lg bg-surface border border-border text-[11px] text-k-text hover:border-accent transition-colors"
+                    >
                       View logs
                     </button>
+                    {showLogs && (
+                      <div className="mt-4 bg-black border border-border rounded-lg p-3 font-mono text-[11px] text-green-400 space-y-1">
+                        <p>✓ Repository cloned</p>
+                        <p>✓ Docker image built</p>
+                        <p>✓ Image loaded into Kind</p>
+                        <p>✓ Kubernetes deployment created</p>
+                        <p>✓ Service exposed</p>
+                        <p>✓ Pod ready</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

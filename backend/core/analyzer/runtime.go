@@ -1,6 +1,9 @@
 package analyzer
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 type Runtime string
 
@@ -14,50 +17,67 @@ const (
 	Unknown Runtime = "unknown"
 )
 
-func DetectRuntime(files []string) Runtime {
+func DetectRuntime(files []string) string {
 
 	has := func(name string) bool {
+
 		for _, f := range files {
-			if strings.EqualFold(f, name) {
+
+			base := strings.ToLower(filepath.Base(f))
+
+			if base == strings.ToLower(name) {
 				return true
 			}
 		}
+
 		return false
 	}
 
-	// PHP FIRST
+	// =========================
+	// PHP
+	// =========================
 	if has("composer.json") || has("artisan") {
-		return PHP
+		return "php"
 	}
 
-	// Node.js
+	// =========================
+	// NODEJS
+	// =========================
 	if has("package.json") ||
 		has("pnpm-workspace.yaml") ||
 		has("turbo.json") {
-		return Node
+		return "nodejs"
 	}
 
-	// Python
+	// =========================
+	// PYTHON
+	// =========================
 	if has("requirements.txt") ||
 		has("pyproject.toml") ||
 		has("setup.py") {
-		return Python
+		return "python"
 	}
 
-	// Go
+	// =========================
+	// GO
+	// =========================
 	if has("go.mod") {
-		return Go
+		return "go"
 	}
 
-	// Rust
+	// =========================
+	// RUST
+	// =========================
 	if has("cargo.toml") {
-		return Rust
+		return "rust"
 	}
 
-	// Static
+	// =========================
+	// STATIC
+	// =========================
 	if has("index.html") {
-		return Static
+		return "static"
 	}
 
-	return Unknown
+	return "unknown"
 }

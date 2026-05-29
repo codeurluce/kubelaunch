@@ -1,15 +1,15 @@
 package analyzer
 
-func DetectEntrypoint(runtime Runtime) string {
+func DetectEntrypoint(runtime string) string {
 	switch runtime {
 
-	case Node:
+	case "nodejs":
 		return "npm start"
 
-	case Python:
+	case "python":
 		return "uvicorn main:app --host 0.0.0.0 --port 8000"
 
-	case Go:
+	case "go":
 		return "go build -o app && ./app"
 
 	default:

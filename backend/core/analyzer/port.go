@@ -1,14 +1,14 @@
 package analyzer
 
-func DetectPort(runtime Runtime) int {
+func DetectPort(runtime string) int {
 	switch runtime {
-	case Node:
+	case "nodejs":
 		return 3000
-	case Python:
+	case "python":
 		return 8000
-	case Go:
+	case "go":
 		return 8080
-	case Static:
+	case "static":
 		return 80
 	default:
 		return 3000

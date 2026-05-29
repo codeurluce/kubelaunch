@@ -15,6 +15,6 @@ COPY . .
 
 EXPOSE %d
 
-CMD ["npm start"]
+CMD ["npm", "start"]
 `, i.Port)
 }

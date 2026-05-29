@@ -15,6 +15,6 @@ COPY . .
 
 EXPOSE %d
 
-CMD ["uvicorn main:app --host 0.0.0.0 --port %d"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "%d"]
 `, i.Port, i.Port)
 }
