@@ -96,6 +96,9 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	if err := builder.BuildImage(repoPath, imageTag); err != nil {
 		return models.DeployResponse{}, fmt.Errorf("docker build failed: %w", err)
 	}
+	fmt.Println("=================================")
+	fmt.Println("IMAGE TAG:", imageTag)
+	fmt.Println("=================================")
 
 	// =========================
 	// 8. LOAD IMAGE INTO CLUSTER

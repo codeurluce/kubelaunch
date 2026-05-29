@@ -26,11 +26,17 @@ func ResolveServiceURL(
 		return resolveMinikubeURL(serviceName)
 
 	case cluster.Kind:
-		return resolveNodePortURL(
-			clientset,
-			namespace,
+		err := StartPortForward(
 			serviceName,
+			"9090",
+			"80",
 		)
+
+		if err != nil {
+			return "", err
+		}
+
+		return "http://localhost:9090", nil
 
 	default:
 		return "", fmt.Errorf("unsupported kubernetes provider")
