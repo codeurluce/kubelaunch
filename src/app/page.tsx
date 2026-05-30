@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { AppCard } from "@/components/AppCard";
-import { DeployForm } from "@/components/DeployForm";
+import { DeployForm } from "@/components/deploy/DeployForm";
 import { LogViewer } from "@/components/LogViewer";
 import { StatCard } from "@/components/StatCard";
 import { MOCK_APPS } from "@/lib/data";
