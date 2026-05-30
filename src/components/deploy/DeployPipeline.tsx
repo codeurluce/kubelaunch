@@ -1,11 +1,17 @@
 "use client";
 
-import { CheckCircle2, Loader2, Rocket } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  Rocket,
+  XCircle,
+} from "lucide-react";
 
 type Step = {
   id: string;
   label: string;
-  status: "pending" | "running" | "success";
+  status: "pending" | "running" | "success" | "error";
+  message?: string;
 };
 
 type Props = {
@@ -27,21 +33,48 @@ export default function DeployPipeline({ steps }: Props) {
         {steps.map((step) => (
           <div
             key={step.id}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border bg-surface"
+            className="flex items-start gap-3 px-3 py-2 rounded-lg border border-border bg-surface"
           >
-            <div className="w-4 flex justify-center">
+            <div className="w-4 flex justify-center mt-[2px]">
               {step.status === "success" ? (
-                <CheckCircle2 size={15} className="text-k-green" />
+                <CheckCircle2
+                  size={15}
+                  className="text-k-green"
+                />
               ) : step.status === "running" ? (
-                <Loader2 size={15} className="animate-spin text-accent" />
+                <Loader2
+                  size={15}
+                  className="animate-spin text-accent"
+                />
+              ) : step.status === "error" ? (
+                <XCircle
+                  size={15}
+                  className="text-red-500"
+                />
               ) : (
                 <div className="w-2 h-2 rounded-full bg-k-muted/40" />
               )}
             </div>
 
-            <span className="text-[11px] font-mono text-k-text">
-              {step.label}
-            </span>
+            <div className="flex-1 min-w-0">
+              <p
+                className={`text-[11px] font-mono ${
+                  step.status === "error"
+                    ? "text-red-400"
+                    : step.status === "running"
+                      ? "text-accent"
+                      : "text-k-text"
+                }`}
+              >
+                {step.label}
+              </p>
+
+              {step.message && (
+                <p className="text-[10px] text-k-muted mt-1 font-mono">
+                  {step.message}
+                </p>
+              )}
+            </div>
           </div>
         ))}
       </div>

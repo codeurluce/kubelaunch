@@ -14,12 +14,8 @@ import ExposureCard from "./ExposureCard";
 import EnvVarsEditor from "./EnvVarsEditor";
 import DeployPipeline from "./DeployPipeline";
 import SuccessCard from "./SuccessCard";
+import type { DeployStep } from "@/lib/api";
 
-type DeployStep = {
-  id: string;
-  label: string;
-  status: "pending" | "running" | "success";
-};
 
 const INITIAL_STEPS: DeployStep[] = [
   {
@@ -84,8 +80,7 @@ export function DeployForm() {
 
   const [showLogs, setShowLogs] = useState(false);
 
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+  const [logs, setLogs] = useState<string[]>([]);
 
   const updateStep = (
     stepId: string,
@@ -124,58 +119,55 @@ export function DeployForm() {
     }
   };
 
-  const handleDeploy = async () => {
-    if (!detected) return;
+const handleDeploy = async () => {
+  if (!detected) return;
 
-    try {
-      setDeploying(true);
+  try {
+    setDeploying(true);
 
-      const pipeline = [
-        "clone",
-        "dockerfile",
-        "manifests",
-        "build",
-        "push",
-        "deploy",
-        "ready",
-      ];
+    setError(null);
 
-      for (const step of pipeline) {
-        updateStep(step, "running");
-        await sleep(600);
-        updateStep(step, "success");
-      }
+    setDeployed(false);
 
-      const envObject = envVars.reduce(
-        (acc, env) => {
-          if (env.key.trim()) {
-            acc[env.key] = env.value;
-          }
+    setLogs([]);
 
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
+    const envObject = envVars.reduce(
+      (acc, env) => {
+        if (env.key.trim()) {
+          acc[env.key] = env.value;
+        }
 
-      const result = await deployApp({
-        repoUrl,
-        appName,
-        namespace: "default",
-        replicas: 1,
-        port: detected.port,
-        stack: detected.stack,
-        envVars: envObject,
-      });
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
 
-      setLiveUrl(result.url);
+    const result = await deployApp({
+      repoUrl,
+      appName,
+      namespace: "default",
+      replicas: 1,
+      port: detected.port,
+      stack: detected.stack,
+      envVars: envObject,
+    });
 
-      setDeployed(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Deploy failed");
-    } finally {
-      setDeploying(false);
-    }
-  };
+    
+    setSteps(result.steps || []); /* VRAIES étapes backend */
+    setLogs(result.logs || []); /* VRAIS logs backend */
+    setLiveUrl(result.url || null); /* URL backend */
+    setDeployed(true);
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Deploy failed",
+    );
+  } finally {
+    setDeploying(false);
+  }
+};
 
   const addEnvVar = () => {
     setEnvVars((prev) => [...prev, { key: "", value: "" }]);
@@ -270,6 +262,7 @@ export function DeployForm() {
           {deployed && liveUrl && (
             <SuccessCard
               liveUrl={liveUrl}
+              logs={logs}
               showLogs={showLogs}
               setShowLogs={setShowLogs}
             />

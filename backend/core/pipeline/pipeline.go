@@ -21,6 +21,28 @@ import (
 // Run = FULL KubeLaunch pipeline
 func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.DeployResponse, error) {
 
+	logs := []string{}
+
+	steps := []models.DeployStep{}
+
+	addLog := func(msg string) {
+		logs = append(logs, msg)
+	}
+
+	addStep := func(
+		id string,
+		label string,
+		status string,
+		message string,
+	) {
+		steps = append(steps, models.DeployStep{
+			ID:      id,
+			Label:   label,
+			Status:  status,
+			Message: message,
+		})
+	}
+
 	// =========================
 	// 1. DETECT PROVIDER
 	// =========================
@@ -36,6 +58,15 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	if err != nil {
 		return models.DeployResponse{}, fmt.Errorf("clone failed: %w", err)
 	}
+
+	addLog("Repository cloned")
+
+	addStep(
+		"clone",
+		"Cloning repository",
+		"success",
+		"Repository cloned successfully",
+	)
 
 	// =========================
 	// 3. ANALYZE PROJECT
@@ -88,6 +119,15 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 		return models.DeployResponse{}, fmt.Errorf("dockerfile write failed: %w", err)
 	}
 
+	addLog("Dockerfile generated")
+
+	addStep(
+		"dockerfile",
+		"Generating Dockerfile",
+		"success",
+		"Dockerfile created",
+	)
+
 	// =========================
 	// 7. BUILD IMAGE
 	// =========================
@@ -99,6 +139,15 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	fmt.Println("=================================")
 	fmt.Println("IMAGE TAG:", imageTag)
 	fmt.Println("=================================")
+
+	addLog("Docker image built")
+
+	addStep(
+		"build",
+		"Building Docker image",
+		"success",
+		"Image built successfully",
+	)
 
 	// =========================
 	// 8. LOAD IMAGE INTO CLUSTER
@@ -122,11 +171,29 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 		// future registry push
 	}
 
+	addLog("Image loaded into cluster")
+
+	addStep(
+		"push",
+		"Loading image",
+		"success",
+		"Image available in cluster",
+	)
+
 	// =========================
 	// 9. GENERATE K8S YAML
 	// =========================
 	deploymentYAML := k8sgen.GenerateDeployment(spec)
 	serviceYAML := k8sgen.GenerateService(spec)
+
+	addLog("Kubernetes manifests generated")
+
+	addStep(
+		"manifests",
+		"Generating Kubernetes manifests",
+		"success",
+		"Deployment and Service manifests generated",
+	)
 
 	// =========================
 	// 10. APPLY TO CLUSTER
@@ -135,9 +202,27 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 		return models.DeployResponse{}, fmt.Errorf("deployment apply failed: %w", err)
 	}
 
+	addLog("Deployment applied")
+
+	addStep(
+		"deploy",
+		"Deploying resources",
+		"success",
+		"Deployment created",
+	)
+
 	if err := kubectlApply(serviceYAML); err != nil {
 		return models.DeployResponse{}, fmt.Errorf("service apply failed: %w", err)
 	}
+
+	addLog("Service created")
+
+	addStep(
+		"service",
+		"Creating service",
+		"success",
+		"Service exposed",
+	)
 
 	// =========================
 	// 11. WAIT FOR READINESS (CRITICAL FIX)
@@ -149,6 +234,15 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	); err != nil {
 		return models.DeployResponse{}, fmt.Errorf("deployment not ready: %w", err)
 	}
+
+	addLog("Pod ready")
+
+	addStep(
+		"ready",
+		"Waiting for pod readiness",
+		"success",
+		"Deployment ready",
+	)
 
 	// =========================
 	// 12. RESOLVE URL
@@ -167,12 +261,15 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	// SUCCESS RESPONSE
 	// =========================
 	return models.DeployResponse{
+		Success:        true,
 		Status:         "deployed",
 		AppName:        req.AppName,
 		Namespace:      req.Namespace,
 		DeploymentName: req.AppName,
 		URL:            url,
 		Message:        "Deployment successful",
+		Logs:           logs,
+		Steps:          steps,
 	}, nil
 }
 
@@ -229,5 +326,7 @@ func WaitForDeploymentReady(
 				// continue waiting, not instantly fail (avoid false positives)
 			}
 		}
+
 	}
+
 }

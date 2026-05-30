@@ -41,8 +41,9 @@ func Deploy(clientset *kubernetes.Clientset) gin.HandlerFunc {
 
 		resp, err := pipeline.Run(clientset, req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
+			c.JSON(http.StatusInternalServerError, models.DeployResponse{
+				Success: false,
+				Error:   err.Error(),
 			})
 			return
 		}
