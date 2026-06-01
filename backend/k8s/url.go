@@ -26,10 +26,30 @@ func ResolveServiceURL(
 		return resolveMinikubeURL(serviceName)
 
 	case cluster.Kind:
-		err := StartPortForward(
+
+		svc, err := clientset.
+			CoreV1().
+			Services(namespace).
+			Get(
+				context.Background(),
+				serviceName,
+				metav1.GetOptions{},
+			)
+
+		if err != nil {
+			return "", err
+		}
+
+		if len(svc.Spec.Ports) == 0 {
+			return "", fmt.Errorf("service has no ports")
+		}
+
+		targetPort := svc.Spec.Ports[0].Port
+
+		err = StartPortForward(
 			serviceName,
 			"9090",
-			"80",
+			fmt.Sprintf("%d", targetPort),
 		)
 
 		if err != nil {

@@ -1,12 +1,19 @@
 package services
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
+
+type githubFileContent struct {
+	Content  string `json:"content"`
+	Encoding string `json:"encoding"`
+	Message  string `json:"message"`
+}
 
 type githubFile struct {
 	Name string `json:"name"`
@@ -17,15 +24,11 @@ type githubFile struct {
 func ExtractRepoPath(url string) (string, error) {
 
 	url = strings.TrimSpace(url)
-
 	url = strings.TrimSuffix(url, "/")
-
 	url = strings.TrimPrefix(url, "https://github.com/")
 	url = strings.TrimPrefix(url, "http://github.com/")
 	url = strings.TrimPrefix(url, "github.com/")
-
 	url = strings.TrimSuffix(url, ".git")
-
 	parts := strings.Split(url, "/")
 
 	if len(parts) < 2 {
@@ -85,6 +88,10 @@ func FetchRootFiles(repoPath string) ([]string, error) {
 
 	var githubFiles []githubFile
 
+	fmt.Println("=================================")
+	fmt.Println(string(body))
+	fmt.Println("=================================")
+
 	if err := json.Unmarshal(body, &githubFiles); err != nil {
 		return nil, err
 	}
@@ -113,6 +120,7 @@ func FetchFileContent(repoPath string, filePath string) (string, error) {
 	}
 
 	req.Header.Set("User-Agent", "KubeLaunch/0.1")
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	resp, err := http.DefaultClient.Do(req)
 
@@ -122,11 +130,33 @@ func FetchFileContent(repoPath string, filePath string) (string, error) {
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("github returned %d", resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		return "", err
 	}
 
-	return string(body), nil
+	var file githubFileContent
+
+	if err := json.Unmarshal(body, &file); err != nil {
+		return "", err
+	}
+
+	if file.Content == "" {
+		return "", fmt.Errorf("empty content")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(
+		strings.ReplaceAll(file.Content, "\n", ""),
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(decoded), nil
 }

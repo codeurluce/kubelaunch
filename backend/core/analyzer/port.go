@@ -1,15 +1,30 @@
 package analyzer
 
-func DetectPort(runtime string) int {
-	switch runtime {
-	case "nodejs":
-		return 3000
-	case "python":
+func DetectPort(
+	framework string,
+	repoPath string,
+) int {
+
+	switch framework {
+
+	case "express":
+		return DetectNodePort(repoPath)
+
+	case "nestjs":
+		return DetectNodePort(repoPath)
+
+	case "nextjs":
+		return DetectNodePort(repoPath)
+
+	case "fastapi":
 		return 8000
-	case "go":
+
+	case "flask":
+		return 5000
+
+	case "gin":
 		return 8080
-	case "static":
-		return 80
+
 	default:
 		return 3000
 	}

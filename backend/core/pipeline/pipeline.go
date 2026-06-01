@@ -77,16 +77,20 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 		return models.DeployResponse{}, fmt.Errorf("missing stack")
 	}
 
+	fmt.Println("REQ PORT:", req.Port)
+
 	port := int(req.Port)
 
 	if port == 0 {
-		port = analyzer.DetectPort(runtime)
+		fmt.Println("REQ PORT:", req.Port)
+		port = analyzer.DetectPort(runtime, repoPath)
 	}
 
 	entry := analyzer.DetectEntrypoint(runtime)
 
 	fmt.Println("=================================")
 	fmt.Println("RUNTIME:", runtime)
+	fmt.Println("PATH:", repoPath)
 	fmt.Println("PORT:", port)
 	fmt.Println("ENTRY:", entry)
 	fmt.Println("=================================")
@@ -108,15 +112,24 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	// =========================
 	// 6. GENERATE DOCKERFILE
 	// =========================
-	dockerfileContent := dockerfile.GenerateDockerfile(runtime)
+	dockerContent := dockerfile.Generate(
+		dockerfile.Input{
+			Stack: runtime,
+			Port:  port,
+		},
+	)
 
 	fmt.Println("=================================")
 	fmt.Println("DOCKERFILE GENERATED:")
-	fmt.Println(dockerfileContent)
+	fmt.Println(dockerContent)
 	fmt.Println("=================================")
 
-	if err := writeFile(repoPath+"/Dockerfile", dockerfileContent); err != nil {
-		return models.DeployResponse{}, fmt.Errorf("dockerfile write failed: %w", err)
+	if err := writeFile(
+		repoPath+"/Dockerfile",
+		dockerContent,
+	); err != nil {
+		return models.DeployResponse{},
+			fmt.Errorf("dockerfile write failed: %w", err)
 	}
 
 	addLog("Dockerfile generated")

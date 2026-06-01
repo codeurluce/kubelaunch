@@ -1,6 +1,8 @@
 package pipeline
 
 import (
+	"fmt"
+
 	"github.com/codeurluce/kubelaunch/backend/core/analyzer"
 	"github.com/codeurluce/kubelaunch/backend/models"
 	"github.com/codeurluce/kubelaunch/backend/services"
@@ -23,10 +25,13 @@ func RunDetect(repoURL string) (models.DetectResponse, error) {
 	runtime := analyzer.DetectRuntime(files)
 	framework := analyzer.DetectFramework(files)
 
+	fmt.Println("FRAMEWORK:", framework)
+	fmt.Println("REPO:", repoPath)
+
 	// 3. response
 	return models.DetectResponse{
 		Stack:         models.StackType(runtime),
-		Port:          analyzer.DetectPort(runtime),
+		Port:          analyzer.DetectPort(framework, repoPath),
 		Framework:     framework,
 		DetectedFiles: files,
 		Confidence:    "high",

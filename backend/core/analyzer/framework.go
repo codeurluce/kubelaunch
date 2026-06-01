@@ -62,5 +62,11 @@ func DetectFramework(files []string) string {
 		return "go"
 	}
 
+	// Generic Node.js / Express
+	if has("package.json") {
+
+		return "express"
+	}
+
 	return "unknown"
 }
