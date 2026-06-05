@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/codeurluce/kubelaunch/backend/core/pipeline"
 	"github.com/codeurluce/kubelaunch/backend/models"
+	"github.com/codeurluce/kubelaunch/backend/utils"
 	"github.com/gin-gonic/gin"
 	"k8s.io/client-go/kubernetes"
 )
@@ -34,6 +36,11 @@ func Deploy(clientset *kubernetes.Clientset) gin.HandlerFunc {
 		if req.Replicas == 0 {
 			req.Replicas = 1
 		}
+
+		req.AppName = utils.SanitizeK8sName(
+			req.AppName,
+		)
+		fmt.Println("APP NAME:", req.AppName)
 
 		// =========================
 		// PIPELINE EXECUTION

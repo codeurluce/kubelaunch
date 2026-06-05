@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -59,11 +60,32 @@ func kindLoad(image string) error {
 }
 
 func kubectlApply(yaml string) error {
+
+	fmt.Println("=================================")
+	fmt.Println("YAML TO APPLY")
+	fmt.Println(yaml)
+	fmt.Println("=================================")
+
 	cmd := exec.Command("kubectl", "apply", "-f", "-")
 
 	cmd.Stdin = strings.NewReader(yaml)
 
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+
+	fmt.Println("=================================")
+	fmt.Println("KUBECTL APPLY OUTPUT")
+	fmt.Println(string(output))
+	fmt.Println("=================================")
+
+	if err != nil {
+		return fmt.Errorf(
+			"kubectl apply failed: %w\n%s",
+			err,
+			string(output),
+		)
+	}
+
+	return nil
 }
 
 func writeFile(path, content string) error {

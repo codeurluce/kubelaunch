@@ -7,6 +7,7 @@ type Props = {
   setRepoUrl: (value: string) => void;
   detecting: boolean;
   onDetect: () => void;
+  repoHistory: string[];
 };
 
 export default function RepoInput({
@@ -14,6 +15,7 @@ export default function RepoInput({
   setRepoUrl,
   detecting,
   onDetect,
+  repoHistory,
 }: Props) {
   return (
     <div className="flex gap-2.5 mb-5">
@@ -29,8 +31,15 @@ export default function RepoInput({
           onChange={(e) => setRepoUrl(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onDetect()}
           placeholder="https://github.com/username/project"
+          list="repo-history"
           className="w-full bg-surface2 border border-border rounded-xl pl-9 pr-4 py-3 text-[12px] font-mono text-k-text placeholder:text-k-muted focus:outline-none focus:border-accent transition-colors"
         />
+
+        <datalist id="repo-history">
+          {[...new Set(repoHistory)].map((url) => (
+            <option key={url} value={url} />
+          ))}
+        </datalist>
       </div>
 
       <button

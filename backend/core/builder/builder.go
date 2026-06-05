@@ -18,7 +18,10 @@ func BuildSpec(req models.DeployRequest, runtime string, port int, entrypoint st
 	}
 
 	finalPort := req.Port
-	if finalPort == 0 {
+
+	if runtime == "static" {
+		finalPort = 80
+	} else if finalPort == 0 {
 		finalPort = int32(port)
 	}
 

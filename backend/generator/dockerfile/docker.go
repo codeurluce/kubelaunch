@@ -1,6 +1,11 @@
 package dockerfile
 
 func Generate(input Input) string {
+
+	if input.Runtime == "static" {
+		return Static(input)
+	}
+
 	switch input.Framework {
 
 	case "nextjs":

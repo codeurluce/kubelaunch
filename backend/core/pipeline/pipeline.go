@@ -108,14 +108,20 @@ func Run(clientset *kubernetes.Clientset, req models.DeployRequest) (models.Depl
 	// 5. BUILD SPEC
 	// =========================
 	spec := builder.BuildSpec(req, runtime, port, entry)
+	fmt.Println("=================================")
+	fmt.Println("SPEC PORT:", spec.Port)
+	fmt.Println("SPEC RUNTIME:", spec.Runtime)
+	fmt.Println("=================================")
 
 	// =========================
 	// 6. GENERATE DOCKERFILE
 	// =========================
 	dockerContent := dockerfile.Generate(
 		dockerfile.Input{
-			Stack: runtime,
-			Port:  port,
+			Runtime: runtime,
+			Stack:   runtime,
+			// Framework: framework,
+			Port: port,
 		},
 	)
 

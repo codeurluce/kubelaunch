@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Rocket, Loader2, CheckCircle2 } from "lucide-react";
 
 import type { DetectResult, EnvVar } from "@/types";
@@ -15,7 +15,6 @@ import EnvVarsEditor from "./EnvVarsEditor";
 import DeployPipeline from "./DeployPipeline";
 import SuccessCard from "./SuccessCard";
 import type { DeployStep } from "@/lib/api";
-
 
 const INITIAL_STEPS: DeployStep[] = [
   {
@@ -60,28 +59,20 @@ export function DeployForm() {
   const [detecting, setDetecting] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [deployed, setDeployed] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
-
   const [detected, setDetected] = useState<DetectResult | null>(null);
-
+  const [appName, setAppName] = useState("");
+  const [steps, setSteps] = useState<DeployStep[]>(INITIAL_STEPS);
+  const [liveUrl, setLiveUrl] = useState<string | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [repoHistory, setRepoHistory] = useState<string[]>([]);
   const [envVars, setEnvVars] = useState<EnvVar[]>([
     {
       key: "",
       value: "",
     },
   ]);
-
-  const [appName, setAppName] = useState("");
-
-  const [steps, setSteps] = useState<DeployStep[]>(INITIAL_STEPS);
-
-  const [liveUrl, setLiveUrl] = useState<string | null>(null);
-
-  const [showLogs, setShowLogs] = useState(false);
-
-  const [logs, setLogs] = useState<string[]>([]);
-
   const updateStep = (
     stepId: string,
     status: "pending" | "running" | "success",
@@ -98,8 +89,32 @@ export function DeployForm() {
     );
   };
 
+  const resetDeploymentState = () => {
+    setDetected(null);
+    setDeployed(false);
+    setDeploying(false);
+    setError(null);
+    setSteps(INITIAL_STEPS);
+    setLogs([]);
+    setLiveUrl(null);
+    setShowLogs(false);
+  };
+
+  const saveRepoToHistory = (url: string) => {
+    const history = JSON.parse(localStorage.getItem("repo-history") || "[]");
+
+    const updated = [url, ...history.filter((r: string) => r !== url)].slice(
+      0,
+      10,
+    );
+
+    localStorage.setItem("repo-history", JSON.stringify(updated));
+  };
+
   const handleDetect = async () => {
     if (!repoUrl.trim()) return;
+
+    resetDeploymentState();
 
     try {
       setDetecting(true);
@@ -107,6 +122,7 @@ export function DeployForm() {
       const result = await detectStack(repoUrl);
 
       setDetected(result);
+      saveRepoToHistory(repoUrl);
 
       const repoName =
         repoUrl.split("/").pop()?.replace(".git", "") || "my-app";
@@ -119,55 +135,51 @@ export function DeployForm() {
     }
   };
 
-const handleDeploy = async () => {
-  if (!detected) return;
+  const handleDeploy = async () => {
+    if (!detected) return;
 
-  try {
-    setDeploying(true);
+    try {
+      setDeploying(true);
 
-    setError(null);
+      setError(null);
 
-    setDeployed(false);
+      setDeployed(false);
 
-    setLogs([]);
+      setLogs([]);
 
-    const envObject = envVars.reduce(
-      (acc, env) => {
-        if (env.key.trim()) {
-          acc[env.key] = env.value;
-        }
+      const envObject = envVars.reduce(
+        (acc, env) => {
+          if (env.key.trim()) {
+            acc[env.key] = env.value;
+          }
 
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
 
-    const result = await deployApp({
-      repoUrl,
-      appName,
-      namespace: "default",
-      replicas: 1,
-      port: detected.port,
-      stack: detected.stack,
-      envVars: envObject,
-    });
+      const result = await deployApp({
+        repoUrl,
+        appName,
+        namespace: "default",
+        replicas: 1,
+        port: detected.port,
+        stack: detected.stack,
+        envVars: envObject,
+      });
 
-    
-    setSteps(result.steps || []); /* VRAIES étapes backend */
-    setLogs(result.logs || []); /* VRAIS logs backend */
-    setLiveUrl(result.url || null); /* URL backend */
-    setDeployed(true);
-
-  } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Deploy failed",
-    );
-  } finally {
-    setDeploying(false);
-  }
-};
+      setSteps(
+        result.steps?.length ? result.steps : INITIAL_STEPS,
+      ); /*setSteps(result.steps || []);apa VRAIES étapes backend */
+      setLogs(result.logs || []); /* VRAIS logs backend */
+      setLiveUrl(result.url || null); /* URL backend */
+      setDeployed(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Deploy failed");
+    } finally {
+      setDeploying(false);
+    }
+  };
 
   const addEnvVar = () => {
     setEnvVars((prev) => [...prev, { key: "", value: "" }]);
@@ -177,11 +189,7 @@ const handleDeploy = async () => {
     setEnvVars((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateEnvVar = (
-    index: number,
-    field: keyof EnvVar,
-    value: string,
-  ) => {
+  const updateEnvVar = (index: number, field: keyof EnvVar, value: string) => {
     setEnvVars((prev) =>
       prev.map((ev, i) =>
         i === index
@@ -193,6 +201,15 @@ const handleDeploy = async () => {
       ),
     );
   };
+
+  useEffect(() => {
+    try {
+      const history = JSON.parse(localStorage.getItem("repo-history") || "[]");
+      setRepoHistory(Array.isArray(history) ? history : []);
+    } catch {
+      setRepoHistory([]);
+    }
+  }, []);
 
   return (
     <div className="bg-surface border border-border rounded-2xl p-6">
@@ -217,6 +234,7 @@ const handleDeploy = async () => {
         setRepoUrl={setRepoUrl}
         detecting={detecting}
         onDetect={handleDetect}
+        repoHistory={repoHistory}
       />
 
       {error && (
@@ -255,9 +273,7 @@ const handleDeploy = async () => {
             updateEnvVar={updateEnvVar}
           />
 
-          {(deploying || deployed) && (
-            <DeployPipeline steps={steps} />
-          )}
+          {(deploying || deployed) && <DeployPipeline steps={steps} />}
 
           {deployed && liveUrl && (
             <SuccessCard
