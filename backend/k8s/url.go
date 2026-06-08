@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/codeurluce/kubelaunch/backend/core/cluster"
 
@@ -192,4 +194,21 @@ func findFreePort() (int, error) {
 	addr := listener.Addr().(*net.TCPAddr)
 
 	return addr.Port, nil
+}
+
+func WaitForHTTP(url string, retries int) error {
+	client := http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	for i := 0; i < retries; i++ {
+		resp, err := client.Get(url)
+		if err == nil && resp.StatusCode < 500 {
+			return nil
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("app never became reachable")
 }

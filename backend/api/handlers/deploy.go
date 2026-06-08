@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/codeurluce/kubelaunch/backend/core/pipeline"
+	"github.com/codeurluce/kubelaunch/backend/k8s"
 	"github.com/codeurluce/kubelaunch/backend/models"
 	"github.com/codeurluce/kubelaunch/backend/utils"
 	"github.com/gin-gonic/gin"
@@ -51,6 +52,20 @@ func Deploy(clientset *kubernetes.Clientset) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, models.DeployResponse{
 				Success: false,
 				Error:   err.Error(),
+			})
+			return
+		}
+
+		// =========================
+		// RUNTIME VERIFICATION
+		// =========================
+
+		err = k8s.WaitForHTTP(resp.URL, 10)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.DeployResponse{
+				Success: false,
+				Error:   "Deployment failed at runtime: app not reachable",
 			})
 			return
 		}

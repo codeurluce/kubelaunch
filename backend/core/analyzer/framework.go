@@ -19,9 +19,7 @@ func DetectFramework(files []string) string {
 	}
 
 	// NestJS
-	if has("nest-cli.json") ||
-		has("tsconfig.spec.json") &&
-			has("package.json") {
+	if has("nest-cli.json") {
 		return "nestjs"
 	}
 
