@@ -15,5 +15,10 @@ func SanitizeK8sName(name string) string {
 	reg := regexp.MustCompile(`[^a-z0-9\-]`)
 	name = reg.ReplaceAllString(name, "")
 
+	// Enforce 63-character limit
+    if len(name) > 63 {
+        name = name[:63]
+    }
+	
 	return strings.Trim(name, "-")
 }
